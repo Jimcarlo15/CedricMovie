@@ -1,0 +1,89 @@
+/* assets/css/admin.css - CedCine Admin Dashboard (High Contrast) */
+.admin-sidebar {
+    min-height: 100vh;
+    background-color: #080d19 !important;
+}
+
+.admin-nav-links .nav-link {
+    color: #cbd5e1 !important;
+    font-weight: 500;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.admin-nav-links .nav-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.admin-nav-links .nav-link.active {
+    background-color: var(--ced-primary) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(229, 9, 20, 0.45);
+}
+
+.admin-card {
+    background-color: var(--ced-bg-surface);
+    border: 1px solid var(--ced-border);
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.admin-card .text-muted {
+    color: #94a3b8 !important;
+    font-weight: 600;
+}
+
+.stat-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+
+.stat-icon.movies { background: rgba(229, 9, 20, 0.2); color: #f87171; }
+.stat-icon.users { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.stat-icon.admins { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.stat-icon.favorites { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+.table-admin {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--ced-text-main);
+    --bs-table-border-color: var(--ced-border);
+}
+
+.table-admin th {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1 !important;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid var(--ced-border);
+}
+
+.table-admin td {
+    padding: 0.95rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--ced-border);
+    color: #f1f5f9 !important;
+}
+
+.table-admin tr:hover td {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.admin-poster-thumb {
+    width: 44px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #000;
+    border: 1px solid var(--ced-border);
+}

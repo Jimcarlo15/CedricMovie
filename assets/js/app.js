@@ -1,130 +1,171 @@
-// assets/js/app.js - CedricMovie Interactivity & AJAX Partial Rendering
+// assets/js/app.js - CedCine Public Application JS
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Elements
-    const playerModal = document.getElementById('playerModal');
-    const playerModalClose = document.getElementById('playerModalClose');
+    // ── Elements ──────────────────────────────────────────────────────────────
+    const playerModalEl    = document.getElementById('playerModal');
     const playerMovieTitle = document.getElementById('playerMovieTitle');
-    const playerBackdrop = document.getElementById('playerBackdrop');
+    const playerBackdrop   = document.getElementById('playerBackdrop');
     const playerDetailLink = document.getElementById('playerDetailLink');
+    const searchInput      = document.getElementById('navbarSearch');
+    const clearSearchBtn   = document.getElementById('clearSearchBtn');
+    const sortSelect       = document.getElementById('sortSelect');
+    const moviesContainer  = document.getElementById('moviesContainer');
 
-    const addMovieModal = document.getElementById('addMovieModal');
-    const openAddMovieBtn = document.getElementById('openAddMovieBtn');
-    const closeAddMovieBtn = document.getElementById('closeAddMovieBtn');
+    let bsPlayerModal = null;
+    if (playerModalEl && window.bootstrap) {
+        bsPlayerModal = new bootstrap.Modal(playerModalEl);
+    }
 
-    const searchInput = document.getElementById('navbarSearch');
-    const sortSelect = document.getElementById('sortSelect');
-    const moviesContainer = document.getElementById('moviesContainer');
+    // ── Update favorites badge in navbar ──────────────────────────────────────
+    function updateFavBadge(count) {
+        let badge = document.querySelector('.fav-badge-count');
+        const favLink = document.querySelector('a[href*="favorites.php"]');
+        if (count > 0) {
+            if (!badge && favLink) {
+                badge = document.createElement('span');
+                badge.className = 'badge rounded-pill bg-danger ms-1 fav-badge-count';
+                favLink.appendChild(badge);
+            }
+            if (badge) badge.textContent = count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
 
-    // Attach Player Modal Event Listeners
+    // ── Favorite toggle ───────────────────────────────────────────────────────
+    function bindFavoriteTriggers() {
+        document.querySelectorAll('.btn-fav-toggle').forEach(function(btn) {
+            // Prevent double-binding
+            if (btn.__favBound) return;
+            btn.__favBound = true;
+
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isLoggedIn = btn.getAttribute('data-logged-in') === '1';
+                if (!isLoggedIn) {
+                    if (confirm('Please log in to add this movie to your favorites. Go to the login page?')) {
+                        window.location.href = 'login.php';
+                    }
+                    return;
+                }
+
+                const movieId = parseInt(btn.getAttribute('data-movie-id'), 10);
+                if (!movieId) return;
+
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch('api/favorite.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ movie_id: movieId })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Server returned ' + response.status);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const isFav = data.status === 'added';
+                        btn.classList.toggle('active', isFav);
+
+                        const icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = isFav
+                                ? 'bi bi-heart-fill text-danger'
+                                : 'bi bi-heart';
+                        }
+                        btn.title = isFav ? 'Remove from Favorites' : 'Add to Favorites';
+
+                        // Detail page has a text label inside the button
+                        const btnText = btn.querySelector('.fav-btn-text');
+                        if (btnText) {
+                            btnText.textContent = isFav ? 'Favorited' : 'Add to Favorites';
+                            btn.className = 'btn ' + (isFav ? 'btn-danger' : 'btn-outline-danger')
+                                + ' btn-lg d-inline-flex align-items-center gap-2 btn-fav-toggle';
+                        }
+
+                        updateFavBadge(data.total_favorites);
+                    } else {
+                        alert(data.message || 'Unable to update favorite status.');
+                    }
+                } catch (err) {
+                    console.error('Favorite toggle error:', err);
+                    alert('Could not update favorites. Please try again.');
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+    }
+
+    bindFavoriteTriggers();
+
+    // ── Watch-movie modal ─────────────────────────────────────────────────────
     function bindPlayerTriggers() {
         document.querySelectorAll('.btn-play-trigger').forEach(btn => {
-            // Remove existing listener clone to prevent duplicate events
             btn.onclick = (e) => {
                 e.preventDefault();
-                const id = btn.getAttribute('data-id');
-                const title = btn.getAttribute('data-title');
+                const id       = btn.getAttribute('data-id');
+                const title    = btn.getAttribute('data-title');
                 const backdrop = btn.getAttribute('data-backdrop') || btn.getAttribute('data-poster');
 
                 if (playerMovieTitle) playerMovieTitle.textContent = title;
                 if (playerBackdrop && backdrop) playerBackdrop.src = backdrop;
                 if (playerDetailLink) playerDetailLink.href = `movie.php?id=${id}`;
 
-                if (playerModal) {
-                    playerModal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
+                if (bsPlayerModal) {
+                    bsPlayerModal.show();
+                } else if (playerModalEl) {
+                    playerModalEl.classList.add('show');
+                    playerModalEl.style.display = 'block';
                 }
             };
         });
     }
-
     bindPlayerTriggers();
 
-    // Close Player Modal
-    if (playerModalClose && playerModal) {
-        playerModalClose.addEventListener('click', () => {
-            playerModal.classList.remove('active');
-            document.body.style.overflow = '';
-        });
-    }
-
-    // Open Add Movie Modal
-    if (openAddMovieBtn && addMovieModal) {
-        openAddMovieBtn.addEventListener('click', () => {
-            addMovieModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-    }
-
-    // Close Add Movie Modal
-    if (closeAddMovieBtn && addMovieModal) {
-        closeAddMovieBtn.addEventListener('click', () => {
-            addMovieModal.classList.remove('active');
-            document.body.style.overflow = '';
-        });
-    }
-
-    // Backdrop Click Close
-    window.addEventListener('click', (e) => {
-        if (e.target === playerModal) {
-            playerModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        if (e.target === addMovieModal) {
-            addMovieModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
-
-    // Escape Key Close
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (playerModal) playerModal.classList.remove('active');
-            if (addMovieModal) addMovieModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
-
-    // Partial Loader Function
+    // ── AJAX partial movie-grid ───────────────────────────────────────────────
     let currentAbortCtrl = null;
     function fetchMovieGridPartial(genre, sort, query, pushToHistory = true) {
         if (!moviesContainer) return;
-
-        if (currentAbortCtrl) {
-            currentAbortCtrl.abort();
-        }
+        if (currentAbortCtrl) currentAbortCtrl.abort();
         currentAbortCtrl = new AbortController();
 
-        // Build URL params
         const urlParams = new URLSearchParams(window.location.search);
         if (genre !== undefined) {
-            if (genre === 'all') urlParams.delete('genre');
-            else urlParams.set('genre', genre);
+            if (genre === 'all') urlParams.delete('genre'); else urlParams.set('genre', genre);
         }
-        if (sort !== undefined) {
-            urlParams.set('sort', sort);
-        }
+        if (sort  !== undefined) urlParams.set('sort', sort);
         if (query !== undefined) {
-            if (query.trim() === '') urlParams.delete('q');
-            else urlParams.set('q', query.trim());
+            if (query.trim() === '') urlParams.delete('q'); else urlParams.set('q', query.trim());
         }
 
-        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
         if (pushToHistory) {
-            window.history.pushState({}, '', newUrl);
+            window.history.pushState({}, '', `${window.location.pathname}?${urlParams}`);
         }
 
-        // Fetch the partial
-        const fetchUrl = `index.php?partial=movies&${urlParams.toString()}`;
-        moviesContainer.style.opacity = '0.4';
+        moviesContainer.style.opacity    = '0.4';
         moviesContainer.style.transition = 'opacity 0.2s ease';
 
-        fetch(fetchUrl, { signal: currentAbortCtrl.signal })
+        fetch(`index.php?partial=movies&${urlParams}`, {
+            credentials: 'same-origin',
+            signal: currentAbortCtrl.signal
+        })
             .then(res => res.text())
             .then(html => {
-                moviesContainer.innerHTML = html;
+                moviesContainer.innerHTML    = html;
                 moviesContainer.style.opacity = '1';
                 bindPlayerTriggers();
+                bindFavoriteTriggers();
                 bindResetFilterTrigger();
             })
             .catch(err => {
@@ -135,81 +176,103 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Intercept Genre Pill Clicks for Instant Partial Loading
-    document.querySelectorAll('.genre-pill').forEach(pill => {
-        pill.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-
-            const url = new URL(pill.href, window.location.origin);
-            const genre = url.searchParams.get('genre') || 'all';
-            const sort = sortSelect ? sortSelect.value : 'rating_desc';
-            const query = searchInput ? searchInput.value : '';
-
-            fetchMovieGridPartial(genre, sort, query);
+    // ── Genre pills ───────────────────────────────────────────────────────────
+    function bindGenrePills() {
+        document.querySelectorAll('.genre-pill').forEach(pill => {
+            pill.onclick = (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                fetchMovieGridPartial(
+                    pill.getAttribute('data-genre') || 'all',
+                    sortSelect  ? sortSelect.value  : 'rating_desc',
+                    searchInput ? searchInput.value : ''
+                );
+            };
         });
-    });
+    }
+    bindGenrePills();
 
-    // Sort Dropdown Change -> Partial Update
+    // Sort dropdown
     if (sortSelect) {
         sortSelect.addEventListener('change', () => {
-            const activeGenrePill = document.querySelector('.genre-pill.active');
-            const url = activeGenrePill ? new URL(activeGenrePill.href, window.location.origin) : null;
-            const genre = url ? (url.searchParams.get('genre') || 'all') : 'all';
-            const query = searchInput ? searchInput.value : '';
-
-            fetchMovieGridPartial(genre, sortSelect.value, query);
+            const active = document.querySelector('.genre-pill.active');
+            fetchMovieGridPartial(
+                active ? active.getAttribute('data-genre') || 'all' : 'all',
+                sortSelect.value,
+                searchInput ? searchInput.value : ''
+            );
         });
     }
 
-    // Live Search with Debounce -> Partial Update
+    // ── Live search ───────────────────────────────────────────────────────────
     let debounceTimer = null;
     if (searchInput) {
+        function toggleClearBtn() {
+            if (clearSearchBtn) {
+                clearSearchBtn.classList.toggle('d-none', searchInput.value.trim().length === 0);
+            }
+        }
+        toggleClearBtn();
+
         searchInput.addEventListener('input', (e) => {
+            toggleClearBtn();
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                const activeGenrePill = document.querySelector('.genre-pill.active');
-                const url = activeGenrePill ? new URL(activeGenrePill.href, window.location.origin) : null;
-                const genre = url ? (url.searchParams.get('genre') || 'all') : 'all';
-                const sort = sortSelect ? sortSelect.value : 'rating_desc';
-
-                fetchMovieGridPartial(genre, sort, e.target.value);
-            }, 250);
+                const active = document.querySelector('.genre-pill.active');
+                fetchMovieGridPartial(
+                    active ? active.getAttribute('data-genre') || 'all' : 'all',
+                    sortSelect ? sortSelect.value : 'rating_desc',
+                    e.target.value
+                );
+            }, 260);
         });
+
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                toggleClearBtn();
+                const active = document.querySelector('.genre-pill.active');
+                fetchMovieGridPartial(
+                    active ? active.getAttribute('data-genre') || 'all' : 'all',
+                    sortSelect ? sortSelect.value : 'rating_desc',
+                    ''
+                );
+            });
+        }
     }
 
-    // Reset Filters Button Handler
+    // ── Reset filters ─────────────────────────────────────────────────────────
     function bindResetFilterTrigger() {
         document.querySelectorAll('.btn-reset-filters').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.onclick = (e) => {
                 e.preventDefault();
-                if (searchInput) searchInput.value = '';
+                if (searchInput) {
+                    searchInput.value = '';
+                    if (clearSearchBtn) clearSearchBtn.classList.add('d-none');
+                }
                 if (sortSelect) sortSelect.value = 'rating_desc';
                 document.querySelectorAll('.genre-pill').forEach(p => {
-                    p.classList.toggle('active', p.textContent.trim().toLowerCase().includes('all'));
+                    p.classList.toggle('active', p.getAttribute('data-genre') === 'all');
                 });
                 fetchMovieGridPartial('all', 'rating_desc', '');
-            });
+            };
         });
     }
     bindResetFilterTrigger();
 
-    // Handle Browser Back/Forward navigation
+    // ── Browser back / forward ────────────────────────────────────────────────
     window.addEventListener('popstate', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const genre = urlParams.get('genre') || 'all';
-        const sort = urlParams.get('sort') || 'rating_desc';
-        const query = urlParams.get('q') || '';
+        const p     = new URLSearchParams(window.location.search);
+        const genre = p.get('genre') || 'all';
+        const sort  = p.get('sort')  || 'rating_desc';
+        const query = p.get('q')     || '';
 
         if (searchInput) searchInput.value = query;
-        if (sortSelect) sortSelect.value = sort;
-
-        document.querySelectorAll('.genre-pill').forEach(p => {
-            const pGenre = new URL(p.href, window.location.origin).searchParams.get('genre') || 'all';
-            p.classList.toggle('active', pGenre === genre);
+        if (sortSelect)  sortSelect.value  = sort;
+        document.querySelectorAll('.genre-pill').forEach(pill => {
+            pill.classList.toggle('active', (pill.getAttribute('data-genre') || 'all') === genre);
         });
-
         fetchMovieGridPartial(genre, sort, query, false);
     });
 });

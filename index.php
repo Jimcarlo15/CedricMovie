@@ -1,11 +1,12 @@
 <?php
-// index.php - Movie Catalog Home (Modular Partials)
+// index.php - CedCine Public Movie Catalog Home (Modular Partials Architecture)
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/helpers/auth.php';
 require_once __DIR__ . '/helpers/partial.php';
 
-$pageTitle = 'CedricMovie - Discover Films, Ratings & Details';
+$pageTitle = 'CedCine - Discover Movie Ratings & Cinematic Catalog';
 
-// Handle Filter, Search & Sort
+// Query Parameters
 $genreFilter = $_GET['genre'] ?? 'all';
 $sortOption = $_GET['sort'] ?? 'rating_desc';
 $searchQuery = trim($_GET['q'] ?? '');
@@ -19,7 +20,7 @@ if ($genreFilter !== 'all' && !empty($genreFilter)) {
 }
 
 if (!empty($searchQuery)) {
-    $query .= " AND (title LIKE :search OR description LIKE :search OR actors LIKE :search OR director LIKE :search)";
+    $query .= " AND (title LIKE :search OR description LIKE :search OR cast LIKE :search OR director LIKE :search)";
     $params[':search'] = '%' . $searchQuery . '%';
 }
 
@@ -28,13 +29,16 @@ switch ($sortOption) {
         $query .= " ORDER BY rating ASC";
         break;
     case 'year_desc':
-        $query .= " ORDER BY year DESC";
+        $query .= " ORDER BY release_year DESC";
         break;
     case 'year_asc':
-        $query .= " ORDER BY year ASC";
+        $query .= " ORDER BY release_year ASC";
         break;
     case 'title_asc':
         $query .= " ORDER BY title ASC";
+        break;
+    case 'title_desc':
+        $query .= " ORDER BY title DESC";
         break;
     case 'rating_desc':
     default:
@@ -46,9 +50,21 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $movies = $stmt->fetchAll();
 
+// Get list of movie IDs favorited by current logged-in user
+$userFavoriteIds = [];
+if (is_logged_in()) {
+    $userId = (int)$_SESSION['user']['id'];
+    $favStmt = $pdo->prepare("SELECT movie_id FROM favorites WHERE user_id = :uid");
+    $favStmt->execute([':uid' => $userId]);
+    $userFavoriteIds = $favStmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
 // If this is an AJAX partial request, return only the movie_grid partial
 if (isset($_GET['partial']) && $_GET['partial'] === 'movies') {
-    render_partial('movie_grid', ['movies' => $movies]);
+    render_partial('movie_grid', [
+        'movies'          => $movies,
+        'userFavoriteIds' => $userFavoriteIds
+    ]);
     exit;
 }
 
@@ -65,18 +81,20 @@ render_partial('navbar');
 render_partial('hero', ['featuredMovie' => $featuredMovie]);
 ?>
 
-<main class="main-container">
+<main class="container-xl py-5" id="catalog">
     <!-- Filter Bar Partial -->
     <?php render_partial('filter_bar'); ?>
 
     <!-- Movie Grid Partial Container -->
     <div id="moviesContainer">
-        <?php render_partial('movie_grid', ['movies' => $movies]); ?>
+        <?php render_partial('movie_grid', [
+            'movies'          => $movies,
+            'userFavoriteIds' => $userFavoriteIds
+        ]); ?>
     </div>
 </main>
 
 <?php
 render_partial('player_modal');
-render_partial('add_modal');
 render_partial('footer');
 ?>

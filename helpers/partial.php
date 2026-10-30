@@ -32,3 +32,23 @@ if (!function_exists('render_partial')) {
     }
 }
 
+if (!function_exists('get_movie_image_url')) {
+    /**
+     * Resolves poster and backdrop image paths correctly whether in root or subdirectory (e.g. admin/)
+     *
+     * @param string|null $url Local path or external URL
+     * @param bool $isSubdir True if called from admin/ or other subdirectory
+     * @return string
+     */
+    function get_movie_image_url(?string $url, bool $isSubdir = false): string {
+        if (empty($url)) {
+            return '';
+        }
+        if (preg_match('/^(https?:\/\/|data:)/i', $url)) {
+            return $url;
+        }
+        $clean = ltrim($url, '/');
+        return ($isSubdir ? '../' : '') . $clean;
+    }
+}
+

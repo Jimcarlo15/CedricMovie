@@ -1,66 +1,69 @@
 <?php
-// partials/player_modal.php
+// partials/player_modal.php - Not Playable Yet Dialog
+$basePath = isset($isSubdir) && $isSubdir ? '../' : '';
 ?>
-<div id="playerModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="playerMovieTitle">
-    <div class="player-modal">
-        <div class="modal-header">
-            <h3 id="playerMovieTitle">Movie Player Preview</h3>
-            <button id="playerModalClose" class="modal-close" aria-label="Close modal">&times;</button>
-        </div>
-
-        <div class="fake-player-stage">
-            <img id="playerBackdrop" class="stage-backdrop" src="" alt="Backdrop">
-            
-            <div class="player-overlay-message">
-                <div class="lock-ring">
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
+<div class="modal fade" id="playerModal" tabindex="-1" aria-labelledby="playerMovieTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-light border border-secondary shadow-lg rounded-4 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="modal-header border-secondary-subtle py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-danger text-uppercase px-2 py-1" style="font-size: 0.7rem;">Catalog Only</span>
+                    <h5 class="modal-title h6 fw-bold mb-0 text-white" id="playerMovieTitle">Movie Player Preview</h5>
                 </div>
-                <div class="player-status-tag">Not Playable Yet</div>
-                <h4>Playback is not enabled</h4>
-                <p>This movie is listed for browsing, ratings, and synopsis exploration. Media streaming and playback capabilities are not supported at this stage.</p>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Fake Player Controls Bar -->
-            <div class="fake-controls">
-                <div class="fake-timeline">
-                    <div class="fake-progress"></div>
+            <!-- Modal Stage: Fake Player -->
+            <div class="fake-player-stage position-relative bg-black" style="aspect-ratio: 16/9; overflow:hidden;">
+                <img id="playerBackdrop" class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" src="" alt="Backdrop" style="filter: brightness(0.25) blur(2px);">
+                
+                <!-- Notice Centerpiece -->
+                <div class="position-absolute top-50 start-50 translate-middle text-center p-4 w-100" style="max-width: 500px; z-index: 5;">
+                    <div class="lock-ring mb-3 mx-auto d-flex align-items-center justify-content-center rounded-circle border border-danger border-2 text-danger" style="width: 72px; height: 72px; background: rgba(239, 68, 68, 0.15);">
+                        <i class="bi bi-lock-fill display-6"></i>
+                    </div>
+                    <span class="badge bg-danger rounded-pill px-3 py-1 mb-2 text-uppercase fw-bold" style="letter-spacing: 0.5px;">
+                        Not Playable Yet
+                    </span>
+                    <h4 class="h5 fw-bold text-white mb-2">Video Streaming Unavailable</h4>
+                    <p class="text-light-emphasis small mb-0" style="line-height: 1.6;">
+                        <strong>CedCine</strong> is an informational movie catalog and rating platform. Full-length video playback and streaming capabilities are <strong>not playable yet</strong>.
+                    </p>
                 </div>
-                <div style="display:flex; align-items:center; gap:0.75rem;">
-                    <span class="fake-btn" title="Disabled">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                    </span>
-                    <span style="font-size:0.75rem; color:var(--text-dim);">00:00 / --:--</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:0.75rem;">
-                    <span class="fake-btn" title="Audio disabled">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                            <line x1="23" y1="9" x2="17" y2="15"></line>
-                            <line x1="17" y1="9" x2="23" y2="15"></line>
-                        </svg>
-                    </span>
-                    <span class="fake-btn" title="Fullscreen disabled">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-                        </svg>
-                    </span>
+
+                <!-- Fake Player Bottom Bar -->
+                <div class="fake-controls position-absolute bottom-0 start-0 end-0 p-3 d-flex align-items-center justify-content-between" style="background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, transparent 100%); z-index: 6;">
+                    <div class="fake-timeline position-absolute top-0 start-0 end-0" style="height: 4px; background: rgba(255,255,255,0.2);">
+                        <div class="fake-progress bg-danger" style="width: 0%; height: 100%;"></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-white-50 small" title="Playback Disabled" style="cursor: not-allowed;">
+                            <i class="bi bi-play-fill fs-5"></i>
+                        </span>
+                        <span class="text-secondary small font-monospace">00:00 / --:--</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 text-secondary">
+                        <i class="bi bi-volume-mute-fill" title="Audio disabled"></i>
+                        <i class="bi bi-badge-hd-fill" title="HD unavailable"></i>
+                        <i class="bi bi-fullscreen" title="Fullscreen unavailable"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="modal-footer">
-            <span style="font-size:0.85rem; color:var(--text-dim);">
-                Status: <strong>Catalog Only</strong>
-            </span>
-            <div style="display:flex; gap:0.75rem;">
-                <a id="playerDetailLink" href="#" class="btn btn-primary btn-sm">Read Full Description &amp; Cast</a>
+            <!-- Modal Footer -->
+            <div class="modal-footer border-secondary-subtle justify-content-between py-2 px-4">
+                <span class="text-light-emphasis small">
+                    Platform Status: <strong class="text-info fw-bold">Information &amp; Rating System</strong>
+                </span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Close</button>
+                    <a id="playerDetailLink" href="#" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1">
+                        <span>View Movie Details</span>
+                        <i class="bi bi-arrow-right small"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
